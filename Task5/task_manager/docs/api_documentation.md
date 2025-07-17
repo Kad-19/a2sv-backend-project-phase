@@ -22,6 +22,26 @@ Task Manager is a RESTful API built with Go for managing tasks. It allows users 
 ### Prerequisites
 
 - Go 1.18 or higher installed
+- A running MongoDB instance (local or Atlas)
+
+### MongoDB Configuration
+
+1. **Set up MongoDB:**
+   - For local development, install MongoDB Community Edition from [mongodb.com](https://www.mongodb.com/try/download/community).
+   - For cloud, create a free cluster on [MongoDB Atlas](https://www.mongodb.com/atlas/database).
+
+2. **Configure connection string:**
+   - Create a `.env` file in the project root.
+   - Add your MongoDB connection string:
+     ```env
+     MONGO_API_URL=mongodb://localhost:27017
+     # Or for Atlas:
+     MONGO_API_URL=mongodb+srv://<username>:<password>@<cluster-url>/test?retryWrites=true&w=majority
+     ```
+   - For Atlas, ensure your IP is whitelisted in Network Access and your cluster is running.
+
+3. **Verify connection:**
+   - The server will print a message when successfully connected to MongoDB.
 
 ### Installation & Running
 
