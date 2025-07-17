@@ -1,64 +1,89 @@
 package data
 
 import (
-	"fmt"
+	"context"
 	"errors"
 	"task_manager/models"
-	"time"
+
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-// Mock data for tasks
-var tasks = []models.Task{
-    {ID: "1", Title: "Task 1", Description: "First task", DueDate: time.Now(), Status: models.Pending},
-    {ID: "2", Title: "Task 2", Description: "Second task", DueDate: time.Now().AddDate(0, 0, 1), Status: models.InProgress},
-    {ID: "3", Title: "Task 3", Description: "Third task", DueDate: time.Now().AddDate(0, 0, 2), Status: models.Completed},
-}
-var tasksCount = 3
-
 // GetTasks returns the list of tasks
-func GetTasks() []models.Task {
-	return tasks
+func GetTasks() ([]models.Task, error) {
+	cur, err := tasks_collection.Find(context.TODO(), bson.D{})
+	if err != nil {
+		return nil, err
+	}
+	defer cur.Close(context.TODO())
+
+	var tasks []models.Task
+	for cur.Next(context.TODO()) {
+		var task models.Task
+		if err := cur.Decode(&task); err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, task)
+	}
+	return tasks, nil
 }
 
 // getTaskByID returns a task by its ID
 func GetTaskByID(id string) *models.Task {
-	for _, task := range tasks {
-		if task.ID == id {
-			return &task
-		}
+	oid, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		return nil
 	}
-	return nil
+	filter := bson.D{{Key: "_id", Value: oid}}
+	var task models.Task
+	err = tasks_collection.FindOne(context.TODO(), filter).Decode(&task)
+	if err != nil {
+		return nil
+	}
+	return &task
 }
 
 // CreateTask adds a new task to the list
-func CreateTask(task models.Task) models.Task {
-	task.ID = fmt.Sprint(tasksCount + 1)
+func CreateTask(task models.Task) (models.Task, error) {
 	task.Status = models.Pending
-	tasksCount++
-	tasks = append(tasks, task)
-	return task
+	res, err := tasks_collection.InsertOne(context.TODO(), task)
+	if err != nil {
+		return models.Task{}, err
+	}
+
+	// Set the ID field in the task to the inserted ObjectID's hex string
+	if oid, ok := res.InsertedID.(bson.ObjectID); ok {
+		task.ID = oid
+	} else {
+		return models.Task{}, errors.New("failed to retrieve inserted task")
+	}
+
+	return task, nil
 }
 
 // UpdateTask updates an existing task
-func UpdateTask(id string, updatedTask models.Task) error{
-	for i, task := range tasks {
-		if task.ID == id {
-			updatedTask.ID = id
-			tasks[i] = updatedTask
-			return nil
-		}
+func UpdateTask(id string, updatedTask models.Task) error {
+	oid, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		return nil
 	}
-
-	return errors.New("task not found")
+	filter := bson.D{{Key: "_id", Value: oid}}
+	_, err = tasks_collection.UpdateOne(context.TODO(), filter, bson.D{{Key: "$set", Value: updatedTask}})
+	return err
 }
-
+	
 // DeleteTask removes a task by its ID
 func DeleteTask(id string) error {
-	for i, task := range tasks {
-		if task.ID == id {
-			tasks = append(tasks[:i], tasks[i+1:]...)
-			return nil
-		}
+	oid, err := bson.ObjectIDFromHex(id)
+	if err != nil {
+		return nil
 	}
-	return errors.New("task not found")
+	filter := bson.D{{Key: "_id", Value: oid}}
+	result, err := tasks_collection.DeleteOne(context.TODO(), filter)
+	if err != nil {
+		return err
+	}
+	if result.DeletedCount == 0 {
+		return errors.New("task not found")
+	}
+	return nil
 }

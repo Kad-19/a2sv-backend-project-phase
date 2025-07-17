@@ -10,7 +10,11 @@ import (
 )
 
 func GetTasks(c *gin.Context) {
-	tasks := data.GetTasks()
+	tasks, err := data.GetTasks()
+	if err != nil {
+		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to retrieve tasks: %v", err)})
+		return
+	}
 	c.JSON(http.StatusOK, tasks)
 }
 
@@ -30,7 +34,11 @@ func CreateTask(c *gin.Context) {
 		c.IndentedJSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("Invalid task data: %v", err)})
 		return
 	} else {
-		newTask = data.CreateTask(newTask)
+		newTask, err := data.CreateTask(newTask)
+		if err != nil {
+			c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to create task: %v", err)})
+			return
+		}
 		c.IndentedJSON(http.StatusCreated, newTask)
 	}
 }

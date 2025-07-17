@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"go.mongodb.org/mongo-driver/v2/bson"
+)
 
 type Status string
 
@@ -11,7 +15,7 @@ const (
 )
 
 type Task struct {
- ID          string    `json:"id"`
+ ID          bson.ObjectID    `json:"id" bson:"_id,omitempty"`
  Title       string    `json:"title" binding:"required"`
  Description string    `json:"description" binding:"required"`
  DueDate     time.Time `json:"dueDate" binding:"required"`
