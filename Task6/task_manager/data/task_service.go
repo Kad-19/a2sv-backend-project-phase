@@ -87,3 +87,31 @@ func DeleteTask(id string) error {
 	}
 	return nil
 }
+
+// CreateUser adds a new user to the list
+func CreateUser(user models.User) (models.User, error) {
+	res, err := user_collection.InsertOne(context.TODO(), user)
+	if err != nil {
+		return models.User{}, err
+	}
+
+	// Set the ID field in the user to the inserted ObjectID's hex string
+	if oid, ok := res.InsertedID.(bson.ObjectID); ok {
+		user.ID = oid
+	} else {
+		return models.User{}, errors.New("failed to retrieve inserted user")
+	}
+
+	return user, nil
+}
+
+// GetUserByEmail retrieves a user by their email
+func GetUserByEmail(email string) (*models.User, error) {
+	filter := bson.D{{Key: "email", Value: email}}
+	var user models.User
+	err := user_collection.FindOne(context.TODO(), filter).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}

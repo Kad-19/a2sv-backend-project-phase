@@ -6,7 +6,7 @@ import (
 )
 
 func main() {
-  // Use the SetServerAPIOptions() method to set the version of the Stable API on the client
+  
 	data.InitMongoDB()
 
 	// Initialize the router

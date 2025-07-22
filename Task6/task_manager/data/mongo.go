@@ -13,6 +13,7 @@ import (
 )
 
 var tasks_collection *mongo.Collection
+var user_collection *mongo.Collection
 
 func InitMongoDB() {
 	// Load environment variables from .env
@@ -39,6 +40,9 @@ func InitMongoDB() {
 
 	// Initialize the tasks collection
 	tasks_collection = client.Database("task_manager").Collection("tasks")
+
+	// Initialize the users collection
+	user_collection = client.Database("task_manager").Collection("users")
 
 	// Send a ping to confirm a successful connection
 	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
